@@ -14,7 +14,7 @@ from datetime import datetime
 class MarketDB:
     def __init__(self):
         """생성자: MariaDB 연결 및 종목코드 딕셔너리 생성"""
-        self.conn = pymysql.connect(host='localhost', user='root', password='****', db='INVESTAR', charset='utf8')
+        self.conn = pymysql.connect(host='localhost', user='root', password='0806', db='INVESTAR', charset='utf8')
         self.codes = dict()
         self.getCompanyInfo()
 
@@ -27,7 +27,7 @@ class MarketDB:
         sql = "SELECT * FROM company_info"
         companyInfo = pd.read_sql(sql, self.conn)
         for idx in range(len(companyInfo)):
-            self.codes[companyInfo['CODE'].values[idx]] = companyInfo['COMPANY'].values[idx]
+            self.codes[companyInfo['code'].values[idx]] = companyInfo['name'].values[idx]
 
     def getDailyPrice(self, code, startDate, endDate):
         """daily_price 테이블에서 읽어와서 데이터프레임으로 반환"""

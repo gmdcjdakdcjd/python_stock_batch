@@ -24,14 +24,14 @@ class MarketDB:
 
     def getCompanyInfo(self):
         """company_info 테이블에서 읽어와서 companyData와 codes에 저장"""
-        sql = "SELECT * FROM company_info"
+        sql = "SELECT * FROM etf_info"
         companyInfo = pd.read_sql(sql, self.conn)
         for idx in range(len(companyInfo)):
             self.codes[companyInfo['code'].values[idx]] = companyInfo['name'].values[idx]
 
     def getDailyPrice(self, code, startDate, endDate):
         """daily_price 테이블에서 읽어와서 데이터프레임으로 반환"""
-        sql = "SELECT * FROM daily_price WHERE code = '{}' and date >= '{}' and date <= '{}'".format(code, startDate,
+        sql = "SELECT * FROM etf_daily_price WHERE code = '{}' and date >= '{}' and date <= '{}'".format(code, startDate,
                                                                                                      endDate)
         df = pd.read_sql(sql, self.conn)
         df.index = df['DATE']
