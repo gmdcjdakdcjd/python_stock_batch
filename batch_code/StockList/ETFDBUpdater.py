@@ -13,6 +13,8 @@ class DBUpdater:
                                     password='0806', db='INVESTAR', charset='utf8')
 
 
+        self.conn.commit()
+        self.codes = dict()
 
     def __del__(self):
         """소멸자: MariaDB 연결 해제"""
@@ -57,12 +59,12 @@ class DBUpdater:
         """네이버에서 읽어온 주식 시세를 DB에 REPLACE"""
         with self.conn.cursor() as curs:
             for r in df.itertuples():
-                sql = f"REPLACE INTO daily_price VALUES ('{code}', " \
+                sql = f"REPLACE INTO etf_daily_price VALUES ('{code}', " \
                       f"'{r.date}', {r.open}, {r.high}, {r.low}, {r.close}, " \
                       f"{r.diff}, {r.volume})"
                 curs.execute(sql)
             self.conn.commit()
-            print('[{}] #{:04d} {} ({}) : {} rows > REPLACE INTO daily_' \
+            print('[{}] #{:04d} {} ({}) : {} rows > REPLACE INTO etf_daily_' \
                   'price [OK]'.format(datetime.now().strftime('%Y-%m-%d' \
                                                               ' %H:%M'), num + 1, company, code, len(df)))
 
@@ -76,7 +78,7 @@ class DBUpdater:
 
     def load_codes_from_db(self):
         with self.conn.cursor() as curs:
-            sql = "SELECT code, name FROM company_info"
+            sql = "SELECT code,name FROM etf_info"
             curs.execute(sql)
             rows = curs.fetchall()
             self.codes = {code: name for code, name in rows}
@@ -97,20 +99,6 @@ class DBUpdater:
         self.update_daily_price(pages_to_fetch)
 
 
-#        tmnow = datetime.now()
-#        lastday = calendar.monthrange(tmnow.year, tmnow.month)[1]
-
-#        if tmnow.month == 12 and tmnow.day == lastday:
-#            tmnext = tmnow.replace(year=tmnow.year + 1, month=1, day=1, hour=17, minute=0, second=0)
-#        elif tmnow.day == lastday:
-#            tmnext = tmnow.replace(month=tmnow.month + 1, day=1, hour=17, minute=0, second=0)
-#        else:
-#            tmnext = tmnow.replace(day=tmnow.day + 1, hour=17, minute=0, second=0)
-#       tmdiff = tmnext - tmnow
-#        secs = tmdiff.seconds
-#        t = Timer(secs, self.execute_daily)
-#        print("Waiting for next update ({}) ... ".format(tmnext.strftime ('%Y-%m-%d %H:%M')))
-#        t.start()
 
 
 if __name__ == '__main__':
