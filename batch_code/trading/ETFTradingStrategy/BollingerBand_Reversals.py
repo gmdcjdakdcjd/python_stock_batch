@@ -1,0 +1,83 @@
+import pandas as pd
+from API import ETFAnalyzer
+from batch_code.trading.db_saver import save_strategy_summary, save_strategy_signal
+
+# -----------------------------
+# 1. DB 연결 및 전략 기본정보
+# -----------------------------
+mk = ETFAnalyzer.MarketDB()
+company = mk.get_etf_info_optimization()
+stocks = list(company['name'])
+name_to_code = {v: k for k, v in mk.codes.items()}
+
+print(f"📊 총 {len(stocks)}개 종목 스캔 시작...")
+
+# -----------------------------
+# 2. 전략 실행 요약 저장 (1회 실행 로그)
+# -----------------------------
+result_id = save_strategy_summary(
+    strategy_name='BollingerBand_Reversal',
+    signal_date=pd.Timestamp.today().strftime('%Y-%m-%d'),
+    signal_type='SCAN'
+)
+
+# -----------------------------
+# 3. 개별 종목 전략 계산
+# -----------------------------
+buy_signals = []
+sell_signals = []
+start_date = (pd.Timestamp.today() - pd.DateOffset(months=6)).strftime('%Y-%m-%d')
+
+for s in stocks:
+    try:
+        df = mk.get_daily_price(s, start_date)  # 기간은 자유 조정
+        if df is None or df.empty or len(df) < 21:
+            continue
+
+        # Bollinger Band 계산
+        df['MA20'] = df['close'].rolling(window=20).mean()
+        df['stddev'] = df['close'].rolling(window=20).std()
+        df['upper'] = df['MA20'] + (df['stddev'] * 2)
+        df['lower'] = df['MA20'] - (df['stddev'] * 2)
+        df['PB'] = (df['close'] - df['lower']) / (df['upper'] - df['lower'])
+        df['II'] = (2 * df['close'] - df['high'] - df['low']) / (df['high'] - df['low']) * df['volume']
+        df['IIP21'] = df['II'].rolling(window=21).sum() / df['volume'].rolling(window=21).sum() * 100
+        df = df.dropna()
+
+        # 최근 거래일 데이터 기준으로 판단
+        last = df.iloc[-1]
+        date = df.index[-1].strftime('%Y-%m-%d')
+        price = float(last['close'])
+        pb = float(last['PB'])
+        iip = float(last['IIP21'])
+
+        if pb < 0.05 and iip > 0:
+            action = 'BUY'
+            buy_signals.append((s, price))
+        elif pb > 0.95 and iip < 0:
+            action = 'SELL'
+            sell_signals.append((s, price))
+        else:
+            continue
+
+        save_strategy_signal(
+            result_id=result_id,
+            code=name_to_code.get(s, 'UNKNOWN'),
+            name=s,
+            action=action,
+            price=price,
+            signal_date=date  # ✅ 날짜 저장
+        )
+
+        print(f"[{date}] {s} ({name_to_code.get(s, 'UNKNOWN')}) → {action} 신호 발생, 종가: {price:,.0f}")
+
+    except Exception as e:
+        print(f"⚠️ {s} 처리 실패: {e}")
+
+# -----------------------------
+# 4. 요약 출력
+# -----------------------------
+print("\n✅ 실행 완료")
+print(f"📈 매수 신호: {len(buy_signals)}건")
+print(f"📉 매도 신호: {len(sell_signals)}건")
+print(f"💾 DB 저장 완료 (result_id={result_id})")

@@ -8,7 +8,7 @@ class MonthlyCodeUpdater:
         self.codes = dict()
 
     def read_etf_code(self):
-        path_etf = r'D:\STOCK_PROJECT\python_stock_batch\batch_code\csvDir\data_4806_20250929.csv'
+        path_etf = r'D:\STOCK_PROJECT\python_stock_batch\batch_code\csvDir\data_3116_20251004.csv'
         # https://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId=MDC0201010105 여기서 분기별로 수동 업데이트
         etf = pd.read_csv(path_etf, encoding="cp949")
         etf = etf[['표준코드', '단축코드', '한글종목약명','기초지수명','지수산출기관','추적배수','복제방법','기초시장분류','기초자산분류','운용사','과세유형']]
@@ -69,10 +69,11 @@ class MonthlyCodeUpdater:
 
 
     def read_krx_code(self):
-        path_krx = r'D:\STOCK_PROJECT\python_stock_batch\batch_code\csvDir\data_0338_20250929.csv'
+        path_krx = r'D:\STOCK_PROJECT\python_stock_batch\batch_code\csvDir\data_2716_20251004.csv'
         # https://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId=MDC0201010105 여기서 분기별로 수동 업데이트
         krx = pd.read_csv(path_krx, encoding="cp949")
         krx = krx[['표준코드', '단축코드', '한글 종목약명', '시장구분', '증권구분', '주식종류']]
+
         krx = krx.rename(columns={
             '표준코드': 'std_code',
             '단축코드': 'code',
@@ -123,4 +124,5 @@ class MonthlyCodeUpdater:
 
 if __name__ == '__main__':
     updater = MonthlyCodeUpdater()
-    updater.update_comp_info()
+    #updater.update_comp_info()
+    updater.update_etf_info()

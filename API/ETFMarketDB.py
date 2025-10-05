@@ -34,5 +34,5 @@ class MarketDB:
         sql = "SELECT * FROM etf_daily_price WHERE code = '{}' and date >= '{}' and date <= '{}'".format(code, startDate,
                                                                                                      endDate)
         df = pd.read_sql(sql, self.conn)
-        df.index = df['DATE']
+        df.index = df['date']
         return df

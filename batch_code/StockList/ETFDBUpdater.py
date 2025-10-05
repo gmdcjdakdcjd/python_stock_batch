@@ -64,17 +64,28 @@ class DBUpdater:
                       f"{r.diff}, {r.volume})"
                 curs.execute(sql)
             self.conn.commit()
-            print('[{}] #{:04d} {} ({}) : {} rows > REPLACE INTO etf_daily_' \
-                  'price [OK]'.format(datetime.now().strftime('%Y-%m-%d' \
-                                                              ' %H:%M'), num + 1, company, code, len(df)))
+            print('[{}] #{:04d} {} ({}) : {} rows > REPLACE INTO etf_daily_price [OK]'
+                  .format(datetime.now().strftime('%Y-%m-%d %H:%M'),
+                          num + 1, company, code, len(df)))
+            # ✅ 자바에서 파싱할 수 있는 형식
+            print(f"ROWCOUNT={len(df)}")
+            return len(df)  # 👈 row count 반환
 
     def update_daily_price(self, pages_to_fetch):
         """KRX 상장법인의 주식 시세를 네이버로부터 읽어서 DB에 업데이트"""
+        total_count = 0
+        processed_codes = 0  # 👈 종목 개수 카운트용
+
         for idx, code in enumerate(self.codes):
             df = self.read_naver(code, self.codes[code], pages_to_fetch)
             if df is None:
                 continue
-            self.replace_into_db(df, idx, code, self.codes[code])
+            total_count += self.replace_into_db(df, idx, code, self.codes[code])
+            processed_codes += 1  # 👈 성공적으로 처리된 종목만 카운트
+
+        #  자바에서 파싱할 수 있는 포맷으로 출력
+        print(f"ROWCOUNT={total_count}")
+        print(f"CODECOUNT={processed_codes}")
 
     def load_codes_from_db(self):
         with self.conn.cursor() as curs:
