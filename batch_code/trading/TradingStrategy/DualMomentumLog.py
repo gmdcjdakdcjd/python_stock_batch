@@ -26,12 +26,12 @@ class DualMomentum:
         start_date = adjust_date(start_date)
         end_date = adjust_date(end_date)
         if not start_date or not end_date:
-            print("⚠️ 날짜 보정 실패 (데이터 없음)")
+            print("날짜 보정 실패 (데이터 없음)")
             return None
 
         total_count = len(self.mk.codes)
         rows = []
-        print(f"\n📊 [상대 모멘텀 계산 시작] {start_date} ~ {end_date}")
+        print(f"\n[상대 모멘텀 계산 시작] {start_date} ~ {end_date}")
         print(f"총 {total_count:,}개 종목 계산 중...")
 
         for idx, code in enumerate(self.mk.codes):
@@ -56,7 +56,7 @@ class DualMomentum:
         df = pd.DataFrame(rows, columns=['code', 'name', 'old_price', 'new_price', 'returns'])
         df = df.sort_values(by='returns', ascending=False).head(stock_count)
 
-        print(f"\n🏁 상위 {stock_count}개 종목 추출 완료")
+        print(f"\n상위 {stock_count}개 종목 추출 완료")
         print("=" * 70)
         print(f"{'순위':<4} {'종목명':<20} {'수익률(%)':>10} {'시작가':>10} {'종가':>10}")
         print("-" * 70)
@@ -65,7 +65,7 @@ class DualMomentum:
             print(f"{rank:<4} {row.name:<20} {row.returns:>10.2f} {row.old_price:>10.0f} {row.new_price:>10.0f}")
 
         print("-" * 70)
-        print(f"📈 평균 수익률: {df['returns'].mean():.2f}%")
+        print(f"평균 수익률: {df['returns'].mean():.2f}%")
         print("=" * 70)
 
         return df
@@ -90,7 +90,7 @@ class DualMomentum:
         end_date = adjust_date(end_date)
 
         rows = []
-        print(f"\n📈 [절대 모멘텀 계산 시작] {start_date} ~ {end_date}")
+        print(f"\n[절대 모멘텀 계산 시작] {start_date} ~ {end_date}")
         print(f"대상: 상대 모멘텀 상위 {len(stockList):,}개 종목 계산 중...")
 
         for idx, code in enumerate(stockList):
@@ -112,7 +112,7 @@ class DualMomentum:
         df = pd.DataFrame(rows, columns=['code', 'name', 'old_price', 'new_price', 'returns'])
         df = df.sort_values(by='returns', ascending=False)
 
-        print(f"\n🏁 절대 모멘텀 계산 완료 (상위 {len(df)}개)")
+        print(f"\n절대 모멘텀 계산 완료 (상위 {len(df)}개)")
         print("=" * 70)
         print(f"{'순위':<4} {'종목명':<20} {'수익률(%)':>10} {'시작가':>10} {'종가':>10}")
         print("-" * 70)
@@ -121,9 +121,9 @@ class DualMomentum:
             print(f"{rank:<4} {row.name:<20} {row.returns:>10.2f} {row.old_price:>10.0f} {row.new_price:>10.0f}")
 
         print("-" * 70)
-        print(f"📈 평균 수익률: {df['returns'].mean():.2f}%")
+        print(f"평균 수익률: {df['returns'].mean():.2f}%")
         print("=" * 70)
-        print("💬 (참고) DB 저장은 생략되었습니다 — 로그 전용 실행 모드입니다.")
+        print("(참고) DB 저장은 생략되었습니다 — 로그 전용 실행 모드입니다.")
         return df
 
 
@@ -139,4 +139,4 @@ if __name__ == '__main__':
     if rltv is not None and not rltv.empty:
         dm.get_abs_momentum(rltv, start_date, end_date)
     else:
-        print("⚠️ 상대 모멘텀 결과가 비어있어 절대 모멘텀 계산을 건너뜀.")
+        print("상대 모멘텀 결과가 비어있어 절대 모멘텀 계산을 건너뜀.")
