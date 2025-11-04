@@ -19,14 +19,22 @@ class MarketDB:
 
     def get_comp_info(self):
         """company_info 테이블에서 읽어와서 codes에 저장"""
-        sql = "SELECT * FROM company_info"
+        sql = """
+              SELECT code, name
+              FROM company_info
+              WHERE stock_type = '보통주'
+              """
         krx = pd.read_sql(sql, self.conn)
         for idx in range(len(krx)):
             self.codes[krx['code'].values[idx]] = krx['name'].values[idx]
 
     def get_comp_info_optimization(self):
         """company_info 테이블에서 읽어와서 codes에 저장하고 DataFrame 반환"""
-        sql = "SELECT * FROM company_info"
+        sql = """
+              SELECT code, name
+              FROM company_info
+              WHERE stock_type = '보통주'
+              """
         krx = pd.read_sql(sql, self.conn)
         for idx in range(len(krx)):
             self.codes[krx['code'].values[idx]] = krx['name'].values[idx]

@@ -19,21 +19,32 @@ class MarketDB:
 
     def get_comp_info(self):
         """company_info 테이블에서 읽어와서 codes에 저장"""
-        sql = "SELECT * FROM etf_info"
+        sql = """
+              SELECT code, name
+              FROM etf_info
+              WHERE name LIKE '%KODEX%'
+                 OR name LIKE '%TIGER%'
+              """
         krx = pd.read_sql(sql, self.conn)
         for idx in range(len(krx)):
             self.codes[krx['code'].values[idx]] = krx['name'].values[idx]
 
     def get_etf_info_optimization(self):
         """company_info 테이블에서 읽어와서 codes에 저장하고 DataFrame 반환"""
-        sql = "SELECT * FROM etf_info"
+        sql = """
+              SELECT code, name
+              FROM etf_info
+              WHERE name LIKE '%KODEX%'
+                 OR name LIKE '%TIGER%' 
+              """
         krx = pd.read_sql(sql, self.conn)
         for idx in range(len(krx)):
             self.codes[krx['code'].values[idx]] = krx['name'].values[idx]
         return krx[['code', 'name']]  # ✅ DataFrame 리턴 추가
 
     def get_daily_price(self, code, start_date=None, end_date=None):
-        """KRX 종목의 일별 시세를 데이터프레임 형태로 반환
+        """
+        KRX 종목의 일별 시세를 데이터프레임 형태로 반환
             - code       : KRX 종목코드('005930') 또는 상장기업명('삼성전자')
             - start_date : 조회 시작일('2020-01-01'), 미입력 시 1년 전 오늘
             - end_date   : 조회 종료일('2020-12-31'), 미입력 시 오늘 날짜

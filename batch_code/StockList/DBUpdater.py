@@ -26,23 +26,39 @@ class DBUpdater:
             html = BeautifulSoup(requests.get(url,
                                               headers={'User-agent': 'Mozilla/5.0'}).text, "lxml")
             pgrr = html.find("td", class_="pgRR")
+
             if pgrr is None:
-                return None
-            s = str(pgrr.a["href"]).split('=')
-            lastpage = s[-1]
+                print(f"[WARN] {company} ({code}) 페이지 구조 이상 - 기본 1페이지만 수집")
+                lastpage = 1
+            else:
+                s = str(pgrr.a["href"]).split('=')
+                lastpage = s[-1]
+
+           #  s = str(pgrr.a["href"]).split('=')
+           #  lastpage = s[-1]
+
             df = pd.DataFrame()
             pages = min(int(lastpage), pages_to_fetch)
             for page in range(1, pages + 1):
                 pg_url = '{}&page={}'.format(url, page)
-                df = df.append(pd.read_html(requests.get(pg_url,
-                                                         headers={'User-agent': 'Mozilla/5.0'}).text)[0])
+                # ✅ append() → concat()으로 변경 (pandas 최신 대응)
+                page_df = pd.read_html(requests.get(pg_url,
+                                                    headers={'User-agent': 'Mozilla/5.0'}).text)[0]
+                df = pd.concat([df, page_df], ignore_index=True)
                 tmnow = datetime.now().strftime('%Y-%m-%d %H:%M')
                 print('[{}] {} ({}) : {:04d}/{:04d} pages are downloading...'.
                       format(tmnow, company, code, page, pages), end="\r")
+
             df = df.rename(columns={'날짜': 'date', '종가': 'close', '전일비': 'diff'
                 , '시가': 'open', '고가': 'high', '저가': 'low', '거래량': 'volume'})
+
+            # ✅ 날짜 정규화 (불완전 데이터 방지)
             df['date'] = df['date'].replace('.', '-')
-            df['diff'] = df['diff'].str.extract(r'(\d+)')
+            df['date'] = pd.to_datetime(df['date'], errors='coerce').dt.strftime('%Y-%m-%d')
+            df = df.dropna(subset=['date'])
+
+            # ✅ diff 문자열 처리 강화
+            df['diff'] = df['diff'].astype(str).str.extract(r'(\d+)')
             df = df.dropna()
             df[['close', 'diff', 'open', 'high', 'low', 'volume']] = df[['close',
                                                                          'diff', 'open', 'high', 'low',
@@ -87,10 +103,11 @@ class DBUpdater:
 
     def load_codes_from_db(self):
         with self.conn.cursor() as curs:
-            sql = "SELECT code, name FROM company_info"
+            sql = "SELECT code, name FROM company_info WHERE stock_type = '보통주'"
             curs.execute(sql)
             rows = curs.fetchall()
             self.codes = {code: name for code, name in rows}
+        print(f"[INFO] {len(self.codes)}개 KOSPI 로드 완료 (보통주)")
 
     def execute_daily(self):
         """실행 즉시 및 매일 오후 다섯시에 daily_price 테이블 업데이트"""

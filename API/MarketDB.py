@@ -24,7 +24,11 @@ class MarketDB:
 
     def getCompanyInfo(self):
         """company_info 테이블에서 읽어와서 companyData와 codes에 저장"""
-        sql = "SELECT * FROM company_info"
+        sql = """
+              SELECT code, name
+              FROM company_info
+               WHERE stock_type = '보통주'
+              """
         companyInfo = pd.read_sql(sql, self.conn)
         for idx in range(len(companyInfo)):
             self.codes[companyInfo['code'].values[idx]] = companyInfo['name'].values[idx]
