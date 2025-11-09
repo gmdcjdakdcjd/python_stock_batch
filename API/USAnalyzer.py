@@ -10,7 +10,7 @@ class MarketDB:
         db_url = "mysql+pymysql://root:0806@localhost/INVESTAR?charset=utf8"
         self.engine = create_engine(db_url)
         self.codes = {}
-        self.get_etf_info()
+        self.get_comp_info()
 
     def __del__(self):
         """소멸자: SQLAlchemy 연결 해제"""
@@ -19,40 +19,36 @@ class MarketDB:
 
     # ----------------------------------------------------------------------
 
-    def get_etf_info(self):
-        """etf_info 테이블에서 읽어와서 codes에 저장"""
+    def get_comp_info(self):
+        """company_info 테이블에서 읽어와서 codes에 저장"""
         sql = text("""
             SELECT code, name
-            FROM etf_info
-            WHERE name LIKE '%KODEX%'
+            FROM company_info_us
         """)
+        # ✅ SQLAlchemy 2.x 방식
         with self.engine.connect() as conn:
-            etf_info = pd.read_sql(sql, conn)
+            us = pd.read_sql(sql, conn)
 
-        self.codes = dict(zip(etf_info['code'], etf_info['name']))
+        self.codes = dict(zip(us['code'], us['name']))
 
-    def get_etf_info_optimization(self):
-        """etf_info 테이블에서 읽어와서 codes에 저장하고 DataFrame 반환"""
+    def get_comp_info_optimization(self):
+        """company_info 테이블에서 읽어와서 codes에 저장하고 DataFrame 반환"""
         sql = text("""
             SELECT code, name
-            FROM etf_info
-            WHERE name LIKE '%KODEX%'
+            FROM company_info_us
         """)
+        # ✅ 동일하게 conn으로 실행
         with self.engine.connect() as conn:
-            etf_info = pd.read_sql(sql, conn)
+            us = pd.read_sql(sql, conn)
 
-        self.codes = dict(zip(etf_info['code'], etf_info['name']))
-        return etf_info[['code', 'name']]
+        self.codes = dict(zip(us['code'], us['name']))
+        return us[['code', 'name']]
 
     # ----------------------------------------------------------------------
 
     def get_daily_price(self, code, start_date=None, end_date=None):
-        """
-        ETF 종목의 일별 시세를 데이터프레임 형태로 반환
-            - code       : ETF 코드('069500') 또는 이름('KODEX 200')
-            - start_date : 조회 시작일 (미입력 시 1년 전)
-            - end_date   : 조회 종료일 (미입력 시 오늘)
-        """
+
+
         # ✅ 날짜 유효성 처리
         if start_date is None:
             start_date = (datetime.today() - timedelta(days=365)).strftime('%Y-%m-%d')
@@ -79,10 +75,10 @@ class MarketDB:
             print(f"ValueError: Code({code}) doesn't exist.")
             return None
 
-        # ✅ SQLAlchemy 2.x 호환 쿼리
+        # ✅ SQLAlchemy 2.x 방식
         sql = text(f"""
             SELECT *
-            FROM etf_daily_price
+            FROM daily_price_us
             WHERE code = '{code}'
             AND date >= '{start_date}'
             AND date <= '{end_date}'

@@ -125,12 +125,12 @@ class DBUpdater:
             sql = """
                 SELECT code, name
                 FROM etf_info
-                WHERE name LIKE '%KODEX%' OR name LIKE '%TIGER%'
+                WHERE name LIKE '%KODEX%'
             """
             curs.execute(sql)
             rows = curs.fetchall()
             self.codes = {code: name for code, name in rows}
-        print(f"[INFO] {len(self.codes)}개 ETF 로드 완료 (KODEX/TIGER)")
+        print(f"[INFO] {len(self.codes)}개 ETF 로드 완료 (KODEX)")
 
     def execute_daily(self):
         """ETF 데이터 업데이트 실행"""

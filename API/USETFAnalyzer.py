@@ -23,8 +23,8 @@ class MarketDB:
         """etf_info 테이블에서 읽어와서 codes에 저장"""
         sql = text("""
             SELECT code, name
-            FROM etf_info
-            WHERE name LIKE '%KODEX%'
+            FROM etf_info_us
+            WHERE issuer = 'BlackRock (iShares)';
         """)
         with self.engine.connect() as conn:
             etf_info = pd.read_sql(sql, conn)
@@ -35,8 +35,8 @@ class MarketDB:
         """etf_info 테이블에서 읽어와서 codes에 저장하고 DataFrame 반환"""
         sql = text("""
             SELECT code, name
-            FROM etf_info
-            WHERE name LIKE '%KODEX%'
+            FROM etf_info_us
+            WHERE issuer = 'BlackRock (iShares)';
         """)
         with self.engine.connect() as conn:
             etf_info = pd.read_sql(sql, conn)
@@ -46,13 +46,8 @@ class MarketDB:
 
     # ----------------------------------------------------------------------
 
-    def get_daily_price(self, code, start_date=None, end_date=None):
-        """
-        ETF 종목의 일별 시세를 데이터프레임 형태로 반환
-            - code       : ETF 코드('069500') 또는 이름('KODEX 200')
-            - start_date : 조회 시작일 (미입력 시 1년 전)
-            - end_date   : 조회 종료일 (미입력 시 오늘)
-        """
+    def get_daily_price_us(self, code, start_date=None, end_date=None):
+
         # ✅ 날짜 유효성 처리
         if start_date is None:
             start_date = (datetime.today() - timedelta(days=365)).strftime('%Y-%m-%d')
@@ -82,7 +77,7 @@ class MarketDB:
         # ✅ SQLAlchemy 2.x 호환 쿼리
         sql = text(f"""
             SELECT *
-            FROM etf_daily_price
+            FROM etf_daily_price_us
             WHERE code = '{code}'
             AND date >= '{start_date}'
             AND date <= '{end_date}'

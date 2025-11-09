@@ -5,7 +5,7 @@ from datetime import datetime
 
 class MarketDB:
     def __init__(self):
-        """생성자: SQLAlchemy 엔진 연결 및 종목코드 딕셔너리 생성"""
+        """생성자: MariaDB 연결 및 종목코드 딕셔너리 생성"""
         db_url = "mysql+pymysql://root:0806@localhost/INVESTAR?charset=utf8"
         self.engine = create_engine(db_url)
         self.codes = dict()
@@ -17,30 +17,25 @@ class MarketDB:
             self.engine.dispose()
 
     def getCompanyInfo(self):
-        """etf_info 테이블에서 읽어와서 codes에 저장"""
-        sql = text("""
+        """company_info 테이블에서 읽어와서 codes에 저장"""
+        sql = text("""       -- ✅ text()로 감싸줘야 함
             SELECT code, name
-            FROM etf_info
-            WHERE name LIKE '%KODEX%'
+            FROM company_info_us
         """)
-        # ✅ SQLAlchemy 2.x 방식 (engine.connect() 사용)
         with self.engine.connect() as conn:
-            companyInfo = pd.read_sql(sql, conn)
-
+            companyInfo = pd.read_sql(sql, conn)  # ✅ conn + text() 조합만 허용됨
         self.codes = dict(zip(companyInfo['code'], companyInfo['name']))
 
     def getDailyPrice(self, code, startDate, endDate):
-        """etf_daily_price 테이블에서 읽어와서 DataFrame으로 반환"""
-        sql = text(f"""
+        """daily_price 테이블에서 읽어와서 데이터프레임으로 반환"""
+        sql = text(f"""       -- ✅ text() 필수
             SELECT *
-            FROM etf_daily_price
+            FROM daily_price_us
             WHERE code = '{code}'
             AND date >= '{startDate}'
             AND date <= '{endDate}'
         """)
-        # ✅ SQLAlchemy 2.x 방식
         with self.engine.connect() as conn:
             df = pd.read_sql(sql, conn)
-
         df.index = df['date']
         return df
