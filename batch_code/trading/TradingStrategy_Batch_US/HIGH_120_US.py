@@ -103,9 +103,10 @@ if high_break_candidates:
             rank_order=idx,
             signal_date=row.date
         )
-
+    print(f"ROWCOUNT={len(df_high)}")
+    print(f"CODECOUNT={len(df_high)}")
+    print(f"RESULT_ID={result_id}")
     print(f"✅ [DB저장완료] {len(df_high)}건 (result_id={result_id})")
-    print(f"ROWCOUNT={len(df_high)} | CODECOUNT={len(df_high)}")
 
 else:
     print("\n💤 [일봉] 120일 종가 신고가 ‘첫 발생’ 종목 없음 — DB 저장 생략.")

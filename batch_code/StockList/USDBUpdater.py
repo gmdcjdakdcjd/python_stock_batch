@@ -16,15 +16,20 @@ with engine.connect() as conn:
     query = text("SELECT code, name FROM company_info_us;")
     codes_df = pd.read_sql(query, conn)
 
+codes_df = codes_df.head(3)
 print(f"✅ 불러온 종목 수: {len(codes_df)}개")
 print(codes_df.head())
 
 # ---------------------------------------------
 # ✅ 3️⃣ yfinance 데이터 수집 및 DB 저장
 # ---------------------------------------------
+total_count = 0          # 전체 저장된 행 개수
+processed_codes = 0      # 처리된 종목 개수
+
 for idx, row in codes_df.iterrows():
     code = row['code']
     name = row['name']
+    processed_codes += 1
 
     print(f"\n[{idx+1}/{len(codes_df)}] {name} ({code}) 주가 불러오는 중...")
 
@@ -98,6 +103,7 @@ for idx, row in codes_df.iterrows():
                     )
                 """
                 conn.execute(text(sql))
+                total_count += 1  # ✅ 저장된 행 카운트
 
         print(f"{name} ({code}) 저장 완료")
 
@@ -105,3 +111,10 @@ for idx, row in codes_df.iterrows():
         print(f"{name} ({code}) 처리 중 오류 발생: {e}")
 
 print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] 모든 종목 업데이트 완료.")
+print(f"📊 총 저장된 행 수: {total_count}")
+print(f"📈 총 처리된 종목 수: {processed_codes}")
+
+# ✅ 자바 파서용 명확한 포맷 (공백 없이)
+print(f"ROWCOUNT={total_count}")
+print(f"CODECOUNT={processed_codes}")
+
