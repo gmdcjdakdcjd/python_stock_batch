@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from API import Analyzer
+from API import AnalyzeKR
 
 mk = Analyzer.MarketDB()
 df = mk.get_daily_price('NAVER', '2023-01-02')

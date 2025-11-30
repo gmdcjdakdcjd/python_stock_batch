@@ -1,25 +1,33 @@
 import pandas as pd
-import pymysql
 from datetime import datetime
+from pymongo import MongoClient
 
 
 class MonthlyCodeUpdater:
     def __init__(self):
-        """생성자: MariaDB 연결"""
-        self.conn = pymysql.connect(
-            host='localhost', user='root', password='0806',
-            db='INVESTAR', charset='utf8'
+        """MongoDB 연결"""
+
+        self.client = MongoClient(
+            "mongodb://root:0806@localhost:27017/?authSource=admin"
         )
+        self.db = self.client["investar"]
+        self.col_company = self.db["company_info_kr"]
+        self.col_etf = self.db["etf_info_kr"]
+
         self.codes = dict()
 
+    # ------------------------------------------------------
+    # ETF CSV 읽기
+    # ------------------------------------------------------
     def read_etf_code(self):
-        """ETF 코드 CSV 읽기"""
-        path_etf = r'D:\STOCK_PROJECT\python_stock_batch\batch_code\csvDir\data_3116_20251004.csv'
         # https://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId=MDC0201010105
-        # 여기서 분기별로 수동 업데이트
-        etf = pd.read_csv(path_etf, encoding="cp949")
-        etf = etf[['표준코드', '단축코드', '한글종목약명', '기초지수명', '지수산출기관',
-                   '추적배수', '복제방법', '기초시장분류', '기초자산분류', '운용사', '과세유형']]
+        path_etf = r'D:\STOCK_PROJECT\python_stock_batch\batch_code\csvDir\data_3649_20251121.csv'
+        etf = pd.read_csv(path_etf, encoding="cp949", dtype={'한글종목약명': str})
+
+        etf = etf[['표준코드', '단축코드', '한글종목약명', '기초지수명',
+                   '지수산출기관', '추적배수', '복제방법', '기초시장분류',
+                   '기초자산분류', '운용사', '과세유형']]
+
         etf = etf.rename(columns={
             '표준코드': 'std_code',
             '단축코드': 'code',
@@ -33,61 +41,59 @@ class MonthlyCodeUpdater:
             '운용사': 'manager',
             '과세유형': 'tax_type'
         })
+
         etf['code'] = etf['code'].astype(str).str.zfill(6)
+        etf['name'] = etf['name'].astype(str)
         return etf
 
+    # ------------------------------------------------------
+    # ETF 저장
+    # ------------------------------------------------------
     def update_etf_info(self):
-        """ETF 코드 정보 갱신"""
-        sql = "SELECT * FROM etf_info"
-        df = pd.read_sql(sql, self.conn)
-        for idx in range(len(df)):
-            self.codes[df['code'].values[idx]] = df['name'].values[idx]
+        today = datetime.today().strftime('%Y-%m-%d')
+        etf = self.read_etf_code()
 
-        with self.conn.cursor() as curs:
-            sql = "SELECT max(last_update) FROM etf_info"
-            curs.execute(sql)
-            rs = curs.fetchone()
-            today = datetime.today().strftime('%Y-%m-%d')
+        for idx, row in etf.iterrows():
+            doc = {
+                "std_code": row["std_code"],
+                "code": row["code"],
+                "name": row["name"],  # 수정: row.name → row["name"]
+                "base_index": row["base_index"],
+                "index_provider": row["index_provider"],
+                "leverage": row["leverage"],
+                "replication_method": row["replication_method"],
+                "market_type": row["market_type"],
+                "asset_type": row["asset_type"],
+                "manager": row["manager"],
+                "tax_type": row["tax_type"],
+                "last_update": today
+            }
 
-            # ✅ 날짜 비교 안정화 (rs[0] None 대비)
-            if rs[0] is None or str(rs[0]) < today:
-                etf = self.read_etf_code()
-                for idx in range(len(etf)):
-                    std_code = etf.std_code.values[idx]
-                    code = etf.code.values[idx]
-                    name = etf.name.values[idx]
-                    base_index = etf.base_index.values[idx]
-                    index_provider = etf.index_provider.values[idx]
-                    leverage = etf.leverage.values[idx]
-                    replication_method = etf.replication_method.values[idx]
-                    market_type = etf.market_type.values[idx]
-                    asset_type = etf.asset_type.values[idx]
-                    manager = etf.manager.values[idx]
-                    tax_type = etf.tax_type.values[idx]
+            self.col_etf.update_one(
+                {"code": row["code"]},
+                {"$set": doc},
+                upsert=True
+            )
 
-                    sql = (
-                        "REPLACE INTO etf_info "
-                        "(std_code, code, name, base_index, index_provider, leverage, replication_method, "
-                        "market_type, asset_type, manager, tax_type, last_update) "
-                        f"VALUES ('{std_code}', '{code}', '{name}', '{base_index}', '{index_provider}', "
-                        f"'{leverage}', '{replication_method}', '{market_type}', '{asset_type}', "
-                        f"'{manager}', '{tax_type}', '{today}')"
-                    )
-                    curs.execute(sql)
-                    self.codes[code] = name
-                    tmnow = datetime.now().strftime('%Y-%m-%d %H:%M')
-                    print(f"[{tmnow}] #{idx + 1:04d} {name} ({code}) > REPLACE INTO etf_info [OK]")
+            tmnow = datetime.now().strftime('%Y-%m-%d %H:%M')
+            print(f"[{tmnow}] #{idx+1:04d} {row['name']} ({row['code']}) > UPSERT etf_info_kr OK")
 
-                self.conn.commit()
-                print(f"ROWCOUNT={len(etf)}\n")
 
+
+
+
+
+    # ------------------------------------------------------
+    # 회사 CSV 읽기
+    # ------------------------------------------------------
     def read_krx_code(self):
-        """KRX 종목 코드 CSV 읽기"""
-        path_krx = r'D:\STOCK_PROJECT\python_stock_batch\batch_code\csvDir\data_2716_20251004.csv'
         # https://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId=MDC0201010105
-        # 여기서 분기별로 수동 업데이트
-        krx = pd.read_csv(path_krx, encoding="cp949")
-        krx = krx[['표준코드', '단축코드', '한글 종목약명', '시장구분', '증권구분', '주식종류']]
+        path_krx = r'D:\STOCK_PROJECT\python_stock_batch\batch_code\csvDir\data_3959_20251121.csv'
+        krx = pd.read_csv(path_krx, encoding="cp949", dtype={'한글 종목약명': str})
+
+        krx = krx[['표준코드', '단축코드', '한글 종목약명', '시장구분',
+                   '증권구분', '주식종류']]
+
         krx = krx.rename(columns={
             '표준코드': 'std_code',
             '단축코드': 'code',
@@ -96,56 +102,47 @@ class MonthlyCodeUpdater:
             '증권구분': 'security_type',
             '주식종류': 'stock_type'
         })
+
         krx['code'] = krx['code'].astype(str).str.zfill(6)
+        krx['name'] = krx['name'].astype(str)
         return krx
 
+    # ------------------------------------------------------
+    # 회사 저장
+    # ------------------------------------------------------
     def update_comp_info(self):
-        """KRX 상장법인 정보 갱신"""
-        sql = "SELECT * FROM company_info"
-        df = pd.read_sql(sql, self.conn)
-        for idx in range(len(df)):
-            self.codes[df['code'].values[idx]] = df['name'].values[idx]
+        today = datetime.today().strftime('%Y-%m-%d')
+        krx = self.read_krx_code()
 
-        with self.conn.cursor() as curs:
-            sql = "SELECT max(last_update) FROM company_info"
-            curs.execute(sql)
-            rs = curs.fetchone()
-            today = datetime.today().strftime('%Y-%m-%d')
+        for idx, row in krx.iterrows():
+            doc = {
+                "code": row["code"],
+                "name": row["name"],  # 수정: row.name → row["name"]
+                "market_type": row["market_type"],
+                "security_type": row["security_type"],
+                "stock_type": row["stock_type"],
+                "std_code": row["std_code"],
+                "last_update": today
+            }
 
-            if rs[0] is None or str(rs[0]) < today:
-                krx = self.read_krx_code()
-                for idx in range(len(krx)):
-                    code = krx.code.values[idx]
-                    name = krx.name.values[idx]
-                    market_type = krx.market_type.values[idx]
-                    security_type = krx.security_type.values[idx]
-                    stock_type = krx.stock_type.values[idx]
-                    std_code = krx.std_code.values[idx]
+            self.col_company.update_one(
+                {"code": row["code"]},
+                {"$set": doc},
+                upsert=True
+            )
 
-                    sql = (
-                        "REPLACE INTO company_info "
-                        "(code, name, market_type, security_type, stock_type, std_code, last_update) "
-                        f"VALUES ('{code}', '{name}', '{market_type}', '{security_type}', "
-                        f"'{stock_type}', '{std_code}', '{today}')"
-                    )
-                    curs.execute(sql)
-                    self.codes[code] = name
-                    tmnow = datetime.now().strftime('%Y-%m-%d %H:%M')
-                    print(f"[{tmnow}] #{idx + 1:04d} {name} ({code}) > REPLACE INTO company_info [OK]")
+            tmnow = datetime.now().strftime('%Y-%m-%d %H:%M')
+            print(f"[{tmnow}] #{idx+1:04d} {row['name']} ({row['code']}) > UPSERT company_info_kr OK")
 
-                self.conn.commit()
-                print(f"ROWCOUNT={len(krx)}\n")
-
+    # ------------------------------------------------------
+    # 전체 업데이트
+    # ------------------------------------------------------
     def update_all(self):
-        """전체 코드 (회사 + ETF) 갱신"""
         self.update_comp_info()
         self.update_etf_info()
-
-    def __del__(self):
-        """소멸자: MariaDB 연결 해제"""
-        self.conn.close()
 
 
 if __name__ == '__main__':
     updater = MonthlyCodeUpdater()
     updater.update_all()
+    updater.client.close()

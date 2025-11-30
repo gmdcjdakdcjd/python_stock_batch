@@ -1,68 +1,70 @@
 import pandas as pd
 import urllib.request
-import pymysql
+from pymongo import MongoClient
 from datetime import datetime
 
 # ------------------------------------------------------------
-# 🧭 1. 미국 S&P500 종목 리스트 (GICS Sector, Sub-Industry 포함)
+# 1. 미국 S&P500 리스트 수집
 # ------------------------------------------------------------
 headers = {'User-Agent': 'Mozilla/5.0'}
+url = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
 
-url_sp500 = 'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies'
-req_sp500 = urllib.request.Request(url_sp500, headers=headers)
-html_sp500 = urllib.request.urlopen(req_sp500).read()
+req = urllib.request.Request(url, headers=headers)
+html = urllib.request.urlopen(req).read()
 
-# ✅ 위키피디아 S&P500 테이블 파싱
-sp500 = pd.read_html(html_sp500)[0]
+# 모든 테이블 읽기
+tables = pd.read_html(html)
 
-# 필요한 컬럼 선택
-sp500 = sp500[['Symbol', 'Security', 'GICS Sector', 'GICS Sub-Industry']]
-sp500.columns = ['code', 'name', 'sector', 'industry']
+# Symbol 컬럼이 있는 테이블 자동 선택
+sp500 = None
+for t in tables:
+    if "Symbol" in t.columns:
+        sp500 = t
+        break
+
+if sp500 is None:
+    raise Exception("S&P500 테이블을 찾을 수 없습니다.")
+
+# 필요한 컬럼만 사용
+sp500 = sp500[['Symbol', 'Security', 'GICS Sector', 'GICS Sub-Industry','CIK']].copy()
+
+sp500.columns = ['code', 'name', 'sector', 'industry', 'cik']
 sp500['market'] = 'S&P500'
 
+# 티커 변환
 sp500['code'] = sp500['code'].str.replace('.', '-', regex=False)
 
-print(f"📊 총 {len(sp500)}개 종목 수집 완료 (S&P500 전용)")
-print(sp500.head(10))
+print(f"총 {len(sp500)}개 종목 수집 완료")
 
 
 # ------------------------------------------------------------
-# 💾 2. DB 저장 함수 (UPSERT)
+# 2. MongoDB 저장 (UPSERT)
 # ------------------------------------------------------------
 def save_us_company_info(df):
-    """S&P500 종목 리스트를 company_info_us 테이블에 저장 (UPSERT)"""
-    conn = pymysql.connect(host='localhost', user='root', password='0806',
-                           db='INVESTAR', charset='utf8')
+    client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
+    col = client["investar"]["company_info_us"]
 
-    with conn.cursor() as curs:
-        for _, row in df.iterrows():
-            sql = """
-                INSERT INTO company_info_us (code, name, market, sector, industry, last_update)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                ON DUPLICATE KEY UPDATE
-                    name = VALUES(name),
-                    market = VALUES(market),
-                    sector = VALUES(sector),
-                    industry = VALUES(industry),
-                    last_update = VALUES(last_update)
-            """
-            curs.execute(sql, (
-                row['code'],
-                row['name'],
-                row['market'],
-                row['sector'],
-                row['industry'],
-                datetime.now()
-            ))
+    today = datetime.now().strftime('%Y-%m-%d')
 
-    conn.commit()
-    conn.close()
-    print(f"💾 {len(df)}건 DB 저장 완료 ✅")
+    for _, row in df.iterrows():
+        doc = {
+            "code": row['code'],
+            "name": row['name'],
+            "market": row['market'],
+            "sector": row['sector'],
+            "industry": row['industry'],
+            "cik": row['cik'],
+            "last_update": today
+        }
+
+        col.update_one({"code": row['code']}, {"$set": doc}, upsert=True)
+
+    client.close()
+    print(f"{len(df)}건 저장 완료")
 
 
 # ------------------------------------------------------------
-# 🚀 3. 전체 저장 실행
+# 3. 실행
 # ------------------------------------------------------------
-print("DB 저장 시작 ...")
 save_us_company_info(sp500)
-print("S&P500 전체 저장 완료 ✅")
+print("S&P500 전체 저장 완료")

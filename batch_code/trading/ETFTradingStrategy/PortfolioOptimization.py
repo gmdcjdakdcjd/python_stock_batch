@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from API import ETFAnalyzer
+from API import ETFAnalyzeKR
 
 # -----------------------------
 # 1. 데이터 준비: ETF별 가격 데이터 수집

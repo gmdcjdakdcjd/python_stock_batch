@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from API import Analyzer
+from API import AnalyzeKR
 from batch_code.trading.db_saver import save_strategy_summary, save_strategy_signal
 import random
 

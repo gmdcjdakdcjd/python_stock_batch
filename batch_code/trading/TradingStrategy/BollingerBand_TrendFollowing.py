@@ -1,5 +1,5 @@
 import pandas as pd
-from API import Analyzer
+from API import AnalyzeKR
 from batch_code.trading.db_saver import save_strategy_summary, save_strategy_signal
 
 # -----------------------------

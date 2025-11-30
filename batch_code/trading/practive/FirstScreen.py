@@ -4,7 +4,7 @@ import datetime
 #from mpl_finance import candlestick_ohlc
 from mplfinance.original_flavor import candlestick_ohlc
 import matplotlib.dates as mdates
-from API import Analyzer
+from API import AnalyzeKR
 
 mk = Analyzer.MarketDB()
 df = mk.get_daily_price('NAVER', '2024-01-01')

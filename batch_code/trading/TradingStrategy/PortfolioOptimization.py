@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from API import Analyzer
+from API import AnalyzeKR
 
 # -----------------------------
 # 1. 데이터 준비: 종목별 가격 데이터 수집

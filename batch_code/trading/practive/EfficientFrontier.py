@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from API import Analyzer
+from API import AnalyzeKR
 
 mk = Analyzer.MarketDB()
 stocks = ['삼성전자', 'SK하이닉스', '현대차', 'NAVER']

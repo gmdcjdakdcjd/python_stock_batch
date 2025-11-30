@@ -1,7 +1,7 @@
 import pandas as pd
 import pymysql
 from datetime import datetime, timedelta
-from API import Analyzer
+from API import AnalyzeKR
 from batch_code.trading.db_saver import save_strategy_summary, save_strategy_signal
 
 # --------------------------------------------------

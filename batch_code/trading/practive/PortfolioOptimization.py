@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 # import matplotlib.pyplot as plt  # 🚫 배치 환경에서는 불필요
-from API import Analyzer
+from API import AnalyzeKR
 from batch_code.trading.db_saver import save_strategy_summary, save_strategy_signal
 from datetime import datetime
 

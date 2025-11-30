@@ -1,7 +1,7 @@
 import pandas as pd
 import pymysql
 from datetime import datetime, timedelta
-from API import Analyzer
+from API import AnalyzeKR
 
 
 class DualMomentum:
