@@ -79,7 +79,7 @@ for code, group in df_all.groupby("code"):
             "name": mk.codes.get(code, "UNKNOWN"),
             "date": last.name.strftime("%Y-%m-%d"),
             "close": float(last["close"]),
-            "prev_close": float(prev["MA60"]),
+            "prev_close": float(prev["close"]),        # 지난주 주봉 종가
             "diff": diff,
             "volume": float(last["volume"]),
             "special_value": float(prev["MA60"])   # MA60 저장
@@ -95,9 +95,10 @@ if touch_list:
     print(df_touch.to_string(index=False))
     print(f"\n총 {len(df_touch)}건 감지됨.\n")
 
+    last_date = touch_list[0]["date"]
     result_id = save_strategy_summary(
         strategy_name=strategy_name,
-        signal_date=today_str,
+        signal_date=last_date,
         total_data=len(touch_list)
     )
 

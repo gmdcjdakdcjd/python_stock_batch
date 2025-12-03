@@ -3,8 +3,10 @@ from datetime import datetime, timedelta
 from FinanceDataReader.investing.data import InvestingDailyReader
 from pymongo import MongoClient
 
-client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-db = client["investar"]
+from common.mongo_util import MongoDB
+
+mongo = MongoDB()
+db = mongo.db
 col_bond = db["bond_info"]
 col_yield = db["bond_daily_price"]
 
@@ -140,7 +142,7 @@ def run():
         print(f"[FETCH] {name} ({ticker}) 최신 금리 수집…")
 
         df = fetch_latest_yield(ticker)
-        # df = fetch_full_5y_yield(ticker) # 5년치 전체 데이터 수집
+        #df = fetch_full_5y_yield(ticker) # 5년치 전체 데이터 수집
 
         if df is None or df.empty:
             continue

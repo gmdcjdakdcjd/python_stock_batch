@@ -3,8 +3,10 @@ import yfinance as yf
 from pymongo import MongoClient
 from datetime import datetime
 
-client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-db = client["investar"]
+from common.mongo_util import MongoDB
+
+mongo = MongoDB()
+db = mongo.db
 col_company = db["company_info_us"]
 col_price = db["daily_price_us"]
 
@@ -99,4 +101,4 @@ print(f"총 처리된 종목 수: {processed_codes}")
 print(f"ROWCOUNT={total_count}")
 print(f"CODECOUNT={processed_codes}")
 
-client.close()
+mongo.close()

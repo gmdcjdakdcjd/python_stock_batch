@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 from bs4 import BeautifulSoup
 # import pymysql  # MariaDB 사용 안 함
@@ -5,6 +7,8 @@ import calendar, time, json
 import requests
 from datetime import datetime
 from pymongo import MongoClient
+
+from common.mongo_util import MongoDB
 
 
 class DBUpdater:
@@ -16,19 +20,13 @@ class DBUpdater:
         #                             password='0806', db='INVESTAR', charset='utf8')
 
         # MongoDB 연결
-        self.client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-        self.db = self.client["investar"]                  # DB 이름
-        self.col_company = self.db["company_info_kr"]      # 회사 코드 컬렉션
-        self.col_daily = self.db["daily_price_kr"]         # 일별 가격 컬렉션
+        mongo = MongoDB()
+        self.mongo = mongo
+        self.db = mongo.db
+        self.col_company = self.db["company_info_kr"]
+        self.col_daily = self.db["daily_price_kr"]
 
         self.codes = {}  # {'005930': '삼성전자'}
-
-    def __del__(self):
-        """MongoDB는 종료 필요 없음"""
-        try:
-            self.client.close()
-        except:
-            pass
 
     # ------------------------------------------------------------
     # 네이버 일별 시세 수집
@@ -153,14 +151,17 @@ class DBUpdater:
     def execute_daily(self):
         self.load_codes_from_db()
 
+        # 현재 파일 경로 기반 절대 경로 만들기
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
+
         try:
-            with open("config.json", "r") as f:
-                config = json.load(f)
-                pages_to_fetch = config['pages_to_fetch']
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                pages_to_fetch = json.load(f).get("pages_to_fetch", 1)
         except FileNotFoundError:
             pages_to_fetch = 1
-            with open("config.json", "w") as f:
-                json.dump({"pages_to_fetch": 1}, f)
+            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+                json.dump({"pages_to_fetch": 1}, f, indent=4, ensure_ascii=False)
 
         self.update_daily_price(pages_to_fetch)
 
@@ -168,4 +169,4 @@ class DBUpdater:
 if __name__ == '__main__':
     dbu = DBUpdater()
     dbu.execute_daily()
-    dbu.client.close()
+    dbu.mongo.close()

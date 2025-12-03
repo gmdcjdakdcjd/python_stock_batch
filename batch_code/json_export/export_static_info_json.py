@@ -5,12 +5,14 @@ import pandas as pd
 from datetime import datetime
 from pymongo import MongoClient
 
+from common.mongo_util import MongoDB
+
 OUT_BASE = "D:/STOCK_PROJECT/batch_out"
 
 
 def export_static_collection(col_name: str, key_name: str):
-    client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-    db = client["investar"]
+    mongo = MongoDB()
+    db = mongo.db
 
     col = db[col_name]
 
@@ -65,4 +67,5 @@ def export_static_collection(col_name: str, key_name: str):
             writer.writerow([row.get(col, "") for col in header])
 
     print(f"✔ CSV 생성 완료: {file_path}")
+    mongo.close()
     return file_path

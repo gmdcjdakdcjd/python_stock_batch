@@ -99,10 +99,9 @@ class DualMomentumBatch:
         # ---------------------------------------------------------
         # 저장
         # ---------------------------------------------------------
-        last_date = df_final.iloc[0]["signal_date"]  # 미국 종가일
         result_id = save_strategy_summary(
             strategy_name=self.strategy_name,
-            signal_date=last_date,
+            signal_date=end_date,
             total_data=len(df_final)
         )
 

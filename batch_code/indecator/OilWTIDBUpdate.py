@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 from bs4 import BeautifulSoup
 # import pymysql   # ← MariaDB는 사용 안 함 (전체 주석 처리)
@@ -6,6 +8,8 @@ import json
 import re
 from pymongo import MongoClient
 from datetime import datetime
+
+from common.mongo_util import MongoDB
 
 
 class OilWTIDBUpdater:
@@ -26,20 +30,24 @@ class OilWTIDBUpdater:
         # ---------------------------------------------------
         # MongoDB 연결
         # ---------------------------------------------------
-        self.client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-        self.db = self.client["investar"]
+        mongo = MongoDB()
+        self.db = mongo.db
         self.col_indicator = self.db["daily_price_indicator"]   # WTI 저장할 컬렉션
 
         # ---------------------------------------------------
         # config_fx.json 로드
         # ---------------------------------------------------
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        CONFIG_PATH = os.path.join(BASE_DIR, "config_fx.json")
+
+        # config_fx.json 로드
         try:
-            with open('config_fx.json', 'r', encoding='utf-8') as f:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
                 config = json.load(f)
                 self.pages_to_fetch = config.get("pages_to_fetch", 1)
         except FileNotFoundError:
             self.pages_to_fetch = 1
-            with open('config_fx.json', 'w', encoding='utf-8') as f:
+            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
                 json.dump({"pages_to_fetch": 1}, f, indent=4, ensure_ascii=False)
 
         print(f"[INFO] WTI pages_to_fetch = {self.pages_to_fetch}")

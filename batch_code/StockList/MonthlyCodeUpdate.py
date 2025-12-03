@@ -2,15 +2,15 @@ import pandas as pd
 from datetime import datetime
 from pymongo import MongoClient
 
+from common.mongo_util import MongoDB
+
 
 class MonthlyCodeUpdater:
     def __init__(self):
-        """MongoDB 연결"""
-
-        self.client = MongoClient(
-            "mongodb://root:0806@localhost:27017/?authSource=admin"
-        )
-        self.db = self.client["investar"]
+        """MongoDB 연결 (공통 유틸)"""
+        mongo = MongoDB()
+        self.mongo = mongo
+        self.db = mongo.db
         self.col_company = self.db["company_info_kr"]
         self.col_etf = self.db["etf_info_kr"]
 
@@ -88,7 +88,7 @@ class MonthlyCodeUpdater:
     # ------------------------------------------------------
     def read_krx_code(self):
         # https://data.krx.co.kr/contents/MDC/MDI/mdiLoader/index.cmd?menuId=MDC0201010105
-        path_krx = r'D:\STOCK_PROJECT\python_stock_batch\batch_code\csvDir\data_3959_20251121.csv'
+        path_krx = r'D:\STOCK_PROJECT\python_stock_batch\batch_code\csvDir\data_0251_20251203.csv'
         krx = pd.read_csv(path_krx, encoding="cp949", dtype={'한글 종목약명': str})
 
         krx = krx[['표준코드', '단축코드', '한글 종목약명', '시장구분',
@@ -145,4 +145,4 @@ class MonthlyCodeUpdater:
 if __name__ == '__main__':
     updater = MonthlyCodeUpdater()
     updater.update_all()
-    updater.client.close()
+    updater.mongo.close()

@@ -3,11 +3,13 @@ import yfinance as yf
 from pymongo import MongoClient
 from datetime import datetime
 
+from common.mongo_util import MongoDB
+
 # ---------------------------------------------
 # 1) MongoDB 연결
 # ---------------------------------------------
-client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-db = client["investar"]
+mongo = MongoDB()
+db = mongo.db
 col_price = db["daily_price_indicator"]
 
 # ---------------------------------------------
@@ -97,4 +99,4 @@ for r in df.itertuples(index=False):
     total_count += 1
 
 print(f"[SNP500 저장 완료] {total_count} rows")
-client.close()
+mongo.client.close()

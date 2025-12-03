@@ -3,14 +3,16 @@ import yfinance as yf
 from pymongo import MongoClient
 from datetime import datetime
 
+from common.mongo_util import MongoDB
+
 # ---------------------------------------------
 # 1️⃣ MongoDB 연결
 # ---------------------------------------------
-client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-db = client["investar"]
+mongo = MongoDB()
+db = mongo.db
 
-col_etf = db["etf_info_us"]           # 미국 ETF 메타 정보
-col_price = db["etf_daily_price_us"]  # 미국 ETF 일별 시세
+col_etf = db["etf_info_us"]
+col_price = db["etf_daily_price_us"]
 
 # ---------------------------------------------
 # 2️⃣ 종목 코드 불러오기 (MongoDB)
@@ -114,4 +116,4 @@ print(f"총 처리된 ETF 수: {processed_codes}")
 print(f"ROWCOUNT={total_count}")
 print(f"CODECOUNT={processed_codes}")
 
-client.close()
+mongo.close()

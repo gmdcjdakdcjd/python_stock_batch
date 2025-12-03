@@ -4,6 +4,8 @@ from sqlalchemy import create_engine, text
 from datetime import datetime, timedelta
 import re
 
+from common.mongo_util import MongoDB
+
 
 class MarketDB:
     def __init__(self):
@@ -17,8 +19,9 @@ class MarketDB:
         # -------------------------------------------------------
         # MongoDB 연결 (실제 사용)
         # -------------------------------------------------------
-        self.mongo = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-        self.mdb = self.mongo["investar"]
+        mongo = MongoDB()
+        self.mongo = mongo  # 종료 위해 저장
+        self.mdb = mongo.db
 
         self.col_etf = self.mdb["etf_info_kr"]            # ETF 기본 정보
         self.col_daily = self.mdb["etf_daily_price_kr"]   # ETF 일별 시세
@@ -27,9 +30,10 @@ class MarketDB:
         self.get_etf_info()   # ⭐ 삼성자산운용만 로딩
 
     def __del__(self):
-        pass
-        # if self.engine:
-        #     self.engine.dispose()
+        try:
+            self.mongo.close()
+        except:
+            pass
 
     # =====================================================================
     # ETF 기본 정보 (삼성자산운용만)

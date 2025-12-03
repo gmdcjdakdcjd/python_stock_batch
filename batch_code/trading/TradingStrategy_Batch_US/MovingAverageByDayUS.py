@@ -90,9 +90,10 @@ if touch_list:
     print(f"\n총 {len(df_touch)}건 감지됨.\n")
 
     # SUMMARY 저장
+    last_date = df_touch["date"].max()
     result_id = save_strategy_summary(
         strategy_name=strategy_name,
-        signal_date=today_str,
+        signal_date=last_date,
         total_data=len(df_touch)
     )
 

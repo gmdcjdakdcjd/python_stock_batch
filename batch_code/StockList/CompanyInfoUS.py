@@ -3,6 +3,8 @@ import urllib.request
 from pymongo import MongoClient
 from datetime import datetime
 
+from common.mongo_util import MongoDB
+
 # ------------------------------------------------------------
 # 1. 미국 S&P500 리스트 수집
 # ------------------------------------------------------------
@@ -41,8 +43,9 @@ print(f"총 {len(sp500)}개 종목 수집 완료")
 # 2. MongoDB 저장 (UPSERT)
 # ------------------------------------------------------------
 def save_us_company_info(df):
-    client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-    col = client["investar"]["company_info_us"]
+    mongo = MongoDB()
+    db = mongo.db
+    col = db["company_info_us"]
 
     today = datetime.now().strftime('%Y-%m-%d')
 
@@ -59,7 +62,7 @@ def save_us_company_info(df):
 
         col.update_one({"code": row['code']}, {"$set": doc}, upsert=True)
 
-    client.close()
+    mongo.close()
     print(f"{len(df)}건 저장 완료")
 
 

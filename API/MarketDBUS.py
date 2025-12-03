@@ -3,6 +3,8 @@ from pymongo import MongoClient
 from sqlalchemy import create_engine, text
 from datetime import datetime
 
+from common.mongo_util import MongoDB
+
 
 class MarketDB:
     def __init__(self):
@@ -16,8 +18,9 @@ class MarketDB:
         # ------------------------------------------
         # MongoDB 연결 (실제 사용)
         # ------------------------------------------
-        self.mongo = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-        self.mdb = self.mongo["investar"]
+        mongo = MongoDB()
+        self.mongo = mongo  # 종료 위해 저장
+        self.mdb = mongo.db
 
         self.col_comp = self.mdb["company_info_us"]     # 미국 종목 리스트
         self.col_daily = self.mdb["daily_price_us"]     # 미국 일별 시세
@@ -26,9 +29,10 @@ class MarketDB:
         self.getCompanyInfo()
 
     def __del__(self):
-        pass
-        # if self.engine:
-        #     self.engine.dispose()
+        try:
+            self.mongo.close()
+        except:
+            pass
 
     # =====================================================================
     # 미국 기업 정보 로딩

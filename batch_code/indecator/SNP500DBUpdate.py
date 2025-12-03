@@ -4,6 +4,8 @@ from datetime import datetime
 # import pymysql   # ← MariaDB 사용 안함 (주석 처리)
 from pymongo import MongoClient
 
+from common.mongo_util import MongoDB
+
 
 class SP500DBUpdater:
     def __init__(self):
@@ -23,8 +25,8 @@ class SP500DBUpdater:
         # ----------------------------------------------------
         # MongoDB 연결
         # ----------------------------------------------------
-        self.client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-        self.db = self.client["investar"]
+        mongo = MongoDB()
+        self.db = mongo.db
         self.col_indicator = self.db["daily_price_indicator"]   # SNP500 저장 컬렉션
 
     def __del__(self):

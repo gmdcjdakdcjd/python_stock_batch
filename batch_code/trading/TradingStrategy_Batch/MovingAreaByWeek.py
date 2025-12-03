@@ -72,7 +72,7 @@ for code, group in df_all.groupby("code"):
             "name": mk.codes.get(code, "UNKNOWN"),
             "date": last.name.strftime("%Y-%m-%d"),
             "close": float(last["close"]),
-            "prev_close": float(prev["MA60"]),   # 지난주 MA60
+            "prev_close": float(prev["close"]),        # 지난주 주봉 종가
             "diff": diff,
             "volume": float(last.get("volume", 0)),
             "special_value": float(prev["MA60"])  # MA60 저장

@@ -3,6 +3,8 @@ from sqlalchemy import create_engine, text
 from pymongo import MongoClient
 from datetime import datetime
 
+from common.mongo_util import MongoDB
+
 
 class MarketDB:
     def __init__(self):
@@ -21,8 +23,9 @@ class MarketDB:
         # ----------------------------------------
         # MongoDB 연결 (실제 동작)
         # ----------------------------------------
-        self.mongo = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-        self.mdb = self.mongo["investar"]
+        mongo = MongoDB()
+        self.mongo = mongo  # 종료 위해 저장
+        self.mdb = mongo.db
 
         self.col_comp = self.mdb["company_info_kr"]
         self.col_daily = self.mdb["daily_price_kr"]
@@ -32,10 +35,10 @@ class MarketDB:
         self.getCompanyInfo()
 
     def __del__(self):
-        """MariaDB 사용 안 함 → 주석"""
-        pass
-        # if self.engine:
-        #     self.engine.dispose()
+        try:
+            self.mongo.close()
+        except:
+            pass
 
     # ======================================================================
     # getCompanyInfo

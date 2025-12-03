@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 from bs4 import BeautifulSoup
 # import pymysql   # -----------------------------------------
@@ -8,6 +10,8 @@ from datetime import datetime
 import json
 import re
 from pymongo import MongoClient
+
+from common.mongo_util import MongoDB
 
 
 class FXDBUpdater:
@@ -26,18 +30,21 @@ class FXDBUpdater:
 
         # -----------------------------------------
         # MongoDB 연결
-        self.client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-        self.db = self.client["investar"]
+        mongo = MongoDB()
+        self.db = mongo.db
         self.col_indicator = self.db["daily_price_indicator"]
+
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        CONFIG_PATH = os.path.join(BASE_DIR, "config_fx.json")
 
         # config_fx.json 로드
         try:
-            with open('config_fx.json', 'r', encoding='utf-8') as f:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
                 config = json.load(f)
                 self.pages_to_fetch = config.get("pages_to_fetch", 1)
         except FileNotFoundError:
             self.pages_to_fetch = 1
-            with open('config_fx.json', 'w', encoding='utf-8') as f:
+            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
                 json.dump({"pages_to_fetch": 1}, f, indent=4, ensure_ascii=False)
 
         print(f"[INFO] pages_to_fetch = {self.pages_to_fetch}")

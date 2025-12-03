@@ -4,6 +4,8 @@ from sqlalchemy import create_engine, text
 from datetime import datetime, timedelta
 import re
 
+from common.mongo_util import MongoDB
+
 
 class MarketDB:
     def __init__(self):
@@ -17,8 +19,9 @@ class MarketDB:
         # -------------------------------------------
         # MongoDB 연결 (실제 사용)
         # -------------------------------------------
-        self.mongo = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-        self.mdb = self.mongo["investar"]
+        mongo = MongoDB()
+        self.mongo = mongo  # 종료 위해 저장
+        self.mdb = mongo.db
 
         self.col_comp = self.mdb["company_info_us"]       # 미국 종목 기본 정보
         self.col_daily = self.mdb["daily_price_us"]       # 미국 종목 일별 시세
@@ -27,9 +30,10 @@ class MarketDB:
         self.get_comp_info()
 
     def __del__(self):
-        pass
-        # if self.engine:
-        #     self.engine.dispose()
+        try:
+            self.mongo.close()
+        except:
+            pass
 
     # =====================================================================
     # 미국 종목 기본 정보 로딩
@@ -124,7 +128,7 @@ class MarketDB:
         df = pd.DataFrame(list(cursor))
 
         if df.empty:
-            print("⚠ MongoDB company_info_kr 데이터 없음")
+            print("⚠ MongoDB company_info_us 데이터 없음")
             return pd.DataFrame(columns=["code", "name"])
 
         # self.codes 업데이트

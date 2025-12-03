@@ -4,6 +4,8 @@ from sqlalchemy import create_engine, text
 from datetime import datetime, timedelta
 import re
 
+from common.mongo_util import MongoDB
+
 
 class MarketDB:
     def __init__(self):
@@ -22,8 +24,9 @@ class MarketDB:
         # ------------------------------
         # MongoDB 연결 (신규 실제 사용)
         # ------------------------------
-        self.mongo = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-        self.mdb = self.mongo["investar"]
+        mongo = MongoDB()
+        self.mongo = mongo  # 종료 위해 저장
+        self.mdb = mongo.db
 
         self.col_comp = self.mdb["company_info_kr"]
         self.col_daily = self.mdb["daily_price_kr"]
@@ -32,10 +35,10 @@ class MarketDB:
         self.get_comp_info()
 
     def __del__(self):
-        """기존 MariaDB connection 종료 → 지금은 사용 안 함"""
-        pass
-        # if self.engine:
-        #     self.engine.dispose()
+        try:
+            self.mongo.close()
+        except:
+            pass
 
     # ----------------------------------------------------------------------
     # 기존 company_info(MariaDB) 함수 → 주석 처리 + 밑에 Mongo 대체 구현

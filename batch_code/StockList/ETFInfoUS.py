@@ -5,6 +5,8 @@ from datetime import datetime
 import time
 from pymongo import MongoClient
 
+from common.mongo_util import MongoDB
+
 
 # ------------------------------------------------------------
 # 1. 미국 ETF 종목 리스트 수집
@@ -92,8 +94,8 @@ def get_us_etf_list_with_issuer():
 # 2. MongoDB 저장 (UPSERT)
 # ------------------------------------------------------------
 def save_us_etf_info_mongo(df):
-    client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-    db = client["investar"]
+    mongo = MongoDB()
+    db = mongo.db
     col = db["etf_info_us"]
 
     today = datetime.now().strftime("%Y-%m-%d")
@@ -113,7 +115,7 @@ def save_us_etf_info_mongo(df):
             upsert=True
         )
 
-    client.close()
+    mongo.close()
     print(f"[OK] {len(df)}개 ETF MongoDB 저장 완료")
 
 

@@ -6,6 +6,8 @@ import pymysql
 from pymongo import MongoClient
 from datetime import datetime, timedelta, timezone
 
+from common.mongo_util import MongoDB
+
 KST = timezone(timedelta(hours=9))
 
 
@@ -85,11 +87,11 @@ def save_strategy_signal(result_id, code, name,
 # MongoDB 버전 (실제 사용)
 # ============================================================
 
-client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-mdb = client["investar"]
+mongo = MongoDB()
+mdb = mongo.db
 
 col_result = mdb["strategy_result"]
-col_detail = mdb["strategy_detail"]  # ← 컬렉션명도 일관되게 detail
+col_detail = mdb["strategy_detail"]
 
 
 # -------------------------------------------------------------------------

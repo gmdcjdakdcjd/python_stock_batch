@@ -6,6 +6,8 @@ from pymongo import MongoClient
 from bson import ObjectId
 from pandas import Timestamp
 
+from common.mongo_util import MongoDB
+
 OUT_BASE = "D:/STOCK_PROJECT/batch_out"
 
 
@@ -27,8 +29,8 @@ def convert_all(obj):
 
 
 def export_daily_price_collection(col_name: str, key_name: str):
-    client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-    db = client["investar"]
+    mongo = MongoDB()
+    db = mongo.db
 
     col = db[col_name]
 
@@ -85,5 +87,5 @@ def export_daily_price_collection(col_name: str, key_name: str):
         json.dump(docs, f, ensure_ascii=False, indent=4)
     print(f"✔ JSON 생성 완료: {json_path}")
     """
-
+    mongo.close()
     return csv_path

@@ -1,9 +1,13 @@
+import os
+
 import pandas as pd
 from bs4 import BeautifulSoup
 import requests
 import json
 from datetime import datetime
 from pymongo import MongoClient
+
+from common.mongo_util import MongoDB
 
 
 class DBUpdater:
@@ -14,16 +18,12 @@ class DBUpdater:
         # self.conn = pymysql.connect(...)
         # self.conn.commit()
 
-        self.client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-        self.db = self.client["investar"]
-        self.col_etf_info = self.db["etf_info_kr"]           # ETF 메타 정보
-        self.col_etf_daily = self.db["etf_daily_price_kr"]   # ETF 일별 가격 저장 컬렉션
+        mongo = MongoDB()
+        self.mongo = mongo  # 🔥 추가해야 함
+        self.col_etf_info = mongo.db["etf_info_kr"]
+        self.col_etf_daily = mongo.db["etf_daily_price_kr"]
 
         self.codes = dict()  # {'코드': '이름'}
-
-    def __del__(self):
-        """MongoDB 종료"""
-        self.client.close()
 
     # -------------------------------------------------
     # 네이버에서 ETF 일별 시세 읽기
@@ -147,12 +147,17 @@ class DBUpdater:
     def execute_daily(self):
         self.load_codes_from_db()
 
+        # 현재 파일 경로 기반 절대 경로 만들기
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        CONFIG_PATH = os.path.join(BASE_DIR, "config.json")
+
         try:
-            with open('config.json', 'r') as f:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
                 pages_to_fetch = json.load(f).get("pages_to_fetch", 1)
         except FileNotFoundError:
             pages_to_fetch = 1
-            json.dump({"pages_to_fetch": 1}, open('config.json', 'w'))
+            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+                json.dump({"pages_to_fetch": 1}, f, indent=4, ensure_ascii=False)
 
         self.update_daily_price(pages_to_fetch)
 
@@ -160,4 +165,4 @@ class DBUpdater:
 if __name__ == '__main__':
     dbu = DBUpdater()
     dbu.execute_daily()
-    dbu.client.close()   # 명시적 종료
+    dbu.mongo.close()   # 명시적 종료

@@ -1,10 +1,12 @@
 import os
 import json
 import csv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pymongo import MongoClient
 from bson import ObjectId
 from pandas import Timestamp
+
+from common.mongo_util import MongoDB
 
 OUT_BASE = "D:/STOCK_PROJECT/batch_out"
 
@@ -38,12 +40,14 @@ def convert_all(obj):
 
 
 def export_strategy_collection(col_name: str, key_name: str):
-    client = MongoClient("mongodb://root:0806@localhost:27017/?authSource=admin")
-    db = client["investar"]
+    mongo = MongoDB()
+    db = mongo.db
 
     col = db[col_name]
 
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    KST = timezone(timedelta(hours=9))
+
+    today = datetime.now(KST).replace(hour=0, minute=0, second=0, microsecond=0)
     tomorrow = today + timedelta(days=1)
     today_folder = today.strftime("%Y%m%d")
 
@@ -83,4 +87,5 @@ def export_strategy_collection(col_name: str, key_name: str):
             writer.writerow(row)
 
     print(f"✔ CSV 생성 완료: {file_path}")
+    mongo.close()
     return file_path
