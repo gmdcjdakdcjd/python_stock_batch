@@ -7,6 +7,7 @@ from bson import ObjectId
 from pandas import Timestamp
 
 from common.mongo_util import MongoDB
+from datetime import datetime, timedelta, timezone
 
 OUT_BASE = "D:/STOCK_PROJECT/batch_out"
 
@@ -34,16 +35,23 @@ def export_daily_price_collection(col_name: str, key_name: str):
 
     col = db[col_name]
 
-    today_folder = datetime.utcnow().strftime("%Y%m%d")
+    # ================================
+    # 🔥 KST 기준 하루 → UTC 변환
+    # ================================
+    KST = timezone(timedelta(hours=9))
+
+    now_kst = datetime.now(KST)
+    start_kst = now_kst.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_kst = start_kst + timedelta(days=1)
+
+    start_utc = start_kst.astimezone(timezone.utc)
+    end_utc = end_kst.astimezone(timezone.utc)
+
+    # 📌 폴더명도 KST 기준이 자연스러움
+    today_folder = start_kst.strftime("%Y%m%d")
 
     out_dir = f"{OUT_BASE}/{today_folder}"
     os.makedirs(out_dir, exist_ok=True)
-
-    # ================================
-    # 🔥 오늘 UTC 00:00 ~ 내일 UTC 00:00
-    # ================================
-    start_utc = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    end_utc = start_utc + timedelta(days=1)
 
     docs = list(col.find(
         {"last_update": {"$gte": start_utc, "$lt": end_utc}},
